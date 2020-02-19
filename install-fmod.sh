@@ -23,6 +23,12 @@ while IFS= read -r line < .fmod-studio-fifo; do
         fi
 done'
 
+GLOBAL_SCRIPT='#!/bin/bash
+if ! [ -e "$HOME/.config/fmod-studio" ]; then
+	cp -r /usr/share/fmod-studio "$HOME/.config/fmod-studio"
+fi
+"$HOME/.config/fmod-studio/fmod.sh"'
+
 BITS=64
 if [[ $1 = "32" ]]; then
 	BITS=32
@@ -180,3 +186,32 @@ popd &>/dev/null
 info "Writing helper script..."
 echo "$HELPER_SCRIPT" > fmod-wine/fmod.sh
 chmod +x fmod-wine/fmod.sh
+
+info "Would you want to install FMOD Studio globally, so that you can create desktop shortcuts to it and run it from anywhere?"
+
+echo -n "$(prefix $(colorecho $WHITE ANSWER))(yes/no): "
+read global_install_answer
+if [[ "$global_install_answer" == "yes" ]]; then
+	info "Authenticate with sudo."
+	sudo -v
+
+	info "Note: FMOD Studio will be installed to /usr/bin and /usr/share."
+	sudo mkdir -p /usr/share
+	sudo rm -rf /usr/share/fmod-studio
+	sudo cp -r fmod-wine /usr/share/fmod-studio
+	sudo rm -f /usr/bin/fmod-studio
+	echo "$GLOBAL_SCRIPT" | sudo tee /usr/bin/fmod-studio &>/dev/null
+	sudo chmod -R 755 /usr/share/fmod-studio
+	sudo chmod +x /usr/bin/fmod-studio
+
+	info "Note: Desktop entry will be installed to /usr/share/applications."
+	sudo cp fmod-studio.desktop /usr/share/applications
+
+	info "Note: Icon will be installed to /usr/share/icons."
+	curl -s "https://www.fmod.com/favicon.ico" > fmod-studio.ico
+	sudo convert -scale 48x48 fmod-studio.ico /usr/share/icons/hicolor/48x48/apps/fmod-studio.png
+
+	info "Done! You can now run: fmod-studio"
+else
+	info "Done! You can now run: fmod-wine/fmod.sh"
+fi

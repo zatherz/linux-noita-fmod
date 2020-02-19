@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=FMOD Studio
+Exec=fmod-studio
+Icon=fmod-studio.png
+Categories=Multimedia
